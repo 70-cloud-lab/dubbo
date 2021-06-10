@@ -152,7 +152,9 @@ public class DubboMonitorTest {
         try {
             URL monitorUrl = URL.valueOf("dubbo://127.0.0.1:17979?interval=10");
             Monitor monitor = monitorFactory.getMonitor(monitorUrl);
-            while (monitor == null) {
+            int j = 0;
+            while (monitor == null && j < 200) {
+                j++;
                 Thread.sleep(10);
                 monitor = monitorFactory.getMonitor(monitorUrl);
             }
