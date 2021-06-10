@@ -31,6 +31,7 @@ import org.apache.dubbo.rpc.RpcInvocation;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.List;
@@ -130,18 +131,17 @@ public class MonitorFilterTest {
                 monitorFilter.onError(t, serviceInvoker, invocation);
             }
         });
-        while (lastStatistics == null) {
-            Thread.sleep(10);
-        }
-        Assertions.assertEquals("abc", lastStatistics.getParameter(MonitorService.APPLICATION));
-        Assertions.assertEquals(MonitorService.class.getName(), lastStatistics.getParameter(MonitorService.INTERFACE));
-        Assertions.assertEquals("aaa", lastStatistics.getParameter(MonitorService.METHOD));
-        Assertions.assertEquals(NetUtils.getLocalHost() + ":20880", lastStatistics.getParameter(MonitorService.PROVIDER));
-        Assertions.assertEquals(NetUtils.getLocalHost(), lastStatistics.getAddress());
-        Assertions.assertNull(lastStatistics.getParameter(MonitorService.CONSUMER));
-        Assertions.assertEquals(1, lastStatistics.getParameter(MonitorService.SUCCESS, 0));
-        Assertions.assertEquals(0, lastStatistics.getParameter(MonitorService.FAILURE, 0));
-        Assertions.assertEquals(1, lastStatistics.getParameter(MonitorService.CONCURRENT, 0));
+        URL myStatistics = monitorFactory.getMonitor(monitorUrl).lookup(null).get(0);
+
+        Assertions.assertEquals("abc", myStatistics.getParameter(MonitorService.APPLICATION));
+        Assertions.assertEquals(MonitorService.class.getName(), myStatistics.getParameter(MonitorService.INTERFACE));
+        Assertions.assertEquals("aaa", myStatistics.getParameter(MonitorService.METHOD));
+        Assertions.assertEquals(NetUtils.getLocalHost() + ":20880", myStatistics.getParameter(MonitorService.PROVIDER));
+        Assertions.assertEquals(NetUtils.getLocalHost(), myStatistics.getAddress());
+        Assertions.assertNull(myStatistics.getParameter(MonitorService.CONSUMER));
+        Assertions.assertEquals(1, myStatistics.getParameter(MonitorService.SUCCESS, 0));
+        Assertions.assertEquals(0, myStatistics.getParameter(MonitorService.FAILURE, 0));
+        Assertions.assertEquals(1, myStatistics.getParameter(MonitorService.CONCURRENT, 0));
         Assertions.assertEquals(invocation, lastInvocation);
     }
 
@@ -158,7 +158,7 @@ public class MonitorFilterTest {
 
         verify(mockMonitorFactory, never()).getMonitor(any(URL.class));
     }
-/*
+
     @Test
     public void testGenericFilter() throws Exception {
         URL monitorUrl = URL.valueOf("dubbo://" + NetUtils.getLocalHost() + ":7070");
@@ -181,18 +181,17 @@ public class MonitorFilterTest {
                 monitorFilter.onError(t, serviceInvoker, invocation);
             }
         });
-        while (lastStatistics == null) {
-            Thread.sleep(10);
-        }
-        Assertions.assertEquals("abc", lastStatistics.getParameter(MonitorService.APPLICATION));
-        Assertions.assertEquals(MonitorService.class.getName(), lastStatistics.getParameter(MonitorService.INTERFACE));
-        Assertions.assertEquals("xxx", lastStatistics.getParameter(MonitorService.METHOD));
-        Assertions.assertEquals(NetUtils.getLocalHost() + ":20880", lastStatistics.getParameter(MonitorService.PROVIDER));
-        Assertions.assertEquals(NetUtils.getLocalHost(), lastStatistics.getAddress());
-        Assertions.assertNull(lastStatistics.getParameter(MonitorService.CONSUMER));
-        Assertions.assertEquals(1, lastStatistics.getParameter(MonitorService.SUCCESS, 0));
-        Assertions.assertEquals(0, lastStatistics.getParameter(MonitorService.FAILURE, 0));
-        Assertions.assertEquals(1, lastStatistics.getParameter(MonitorService.CONCURRENT, 0));
+        URL myStatistics = monitorFactory.getMonitor(monitorUrl).lookup(null).get(0);
+
+        Assertions.assertEquals("abc", myStatistics.getParameter(MonitorService.APPLICATION));
+        Assertions.assertEquals(MonitorService.class.getName(), myStatistics.getParameter(MonitorService.INTERFACE));
+        Assertions.assertEquals("xxx", myStatistics.getParameter(MonitorService.METHOD));
+        Assertions.assertEquals(NetUtils.getLocalHost() + ":20880", myStatistics.getParameter(MonitorService.PROVIDER));
+        Assertions.assertEquals(NetUtils.getLocalHost(), myStatistics.getAddress());
+        Assertions.assertNull(myStatistics.getParameter(MonitorService.CONSUMER));
+        Assertions.assertEquals(1, myStatistics.getParameter(MonitorService.SUCCESS, 0));
+        Assertions.assertEquals(0, myStatistics.getParameter(MonitorService.FAILURE, 0));
+        Assertions.assertEquals(1, myStatistics.getParameter(MonitorService.CONCURRENT, 0));
         Assertions.assertEquals(invocation, lastInvocation);
     }
 
@@ -208,5 +207,5 @@ public class MonitorFilterTest {
         Invocation invocation = new RpcInvocation("aaa", MonitorService.class.getName(), "", new Class<?>[0], new Object[0]);
 
         monitorFilter.invoke(serviceInvoker, invocation);
-    }*/
+    }
 }
