@@ -51,7 +51,7 @@ import static org.mockito.Mockito.verify;
  */
 public class MonitorFilterTest {
 
-    private static volatile URL lastStatistics;
+    private volatile URL lastStatistics;
 
     private volatile Invocation lastInvocation;
 
@@ -99,7 +99,8 @@ public class MonitorFilterTest {
                 }
 
                 public void collect(URL statistics) {
-                    lastStatistics = statistics;
+                    MonitorFilterTest.this.lastStatistics = statistics;
+                    System.out.println(statistics.hashCode());
                 }
 
                 public List<URL> lookup(URL query) {
@@ -110,7 +111,7 @@ public class MonitorFilterTest {
     };
 
     @Test
-    public void testFilter() throws Exception {
+    public void testFilters() throws Exception {
         URL monitorUrl = URL.valueOf("dubbo://" + NetUtils.getLocalHost() + ":7070");
         Monitor monitor = monitorFactory.getMonitor(monitorUrl);
         int i = 0;
@@ -119,6 +120,11 @@ public class MonitorFilterTest {
             monitor = monitorFactory.getMonitor(monitorUrl);
         }
 
+        testFilter();
+        testGenericFilter();
+    }
+
+    public void testFilter() throws Exception {
         MonitorFilter monitorFilter = new MonitorFilter();
         monitorFilter.setMonitorFactory(monitorFactory);
         Invocation invocation = new RpcInvocation("aaa", MonitorService.class.getName(), "", new Class<?>[0], new Object[0]);
@@ -134,6 +140,7 @@ public class MonitorFilterTest {
         while (lastStatistics == null) {
             Thread.sleep(10);
         }
+        System.out.println(lastStatistics.hashCode());
         Assertions.assertEquals("abc", lastStatistics.getParameter(MonitorService.APPLICATION));
         Assertions.assertEquals(MonitorService.class.getName(), lastStatistics.getParameter(MonitorService.INTERFACE));
         Assertions.assertEquals("aaa", lastStatistics.getParameter(MonitorService.METHOD));
@@ -160,16 +167,7 @@ public class MonitorFilterTest {
         verify(mockMonitorFactory, never()).getMonitor(any(URL.class));
     }
 
-    @Test
     public void testGenericFilter() throws Exception {
-        URL monitorUrl = URL.valueOf("dubbo://" + NetUtils.getLocalHost() + ":7070");
-        Monitor monitor = monitorFactory.getMonitor(monitorUrl);
-        int i = 0;
-        while (monitor == null && i < 200) {
-            i++;
-            monitor = monitorFactory.getMonitor(monitorUrl);
-        }
-
         MonitorFilter monitorFilter = new MonitorFilter();
         monitorFilter.setMonitorFactory(monitorFactory);
         Invocation invocation = new RpcInvocation("$invoke", MonitorService.class.getName(), "", new Class<?>[]{String.class, String[].class, Object[].class}, new Object[]{"xxx", new String[]{}, new Object[]{}});
@@ -185,6 +183,7 @@ public class MonitorFilterTest {
         while (lastStatistics == null) {
             Thread.sleep(10);
         }
+        System.out.println(lastStatistics.hashCode());
         Assertions.assertEquals("abc", lastStatistics.getParameter(MonitorService.APPLICATION));
         Assertions.assertEquals(MonitorService.class.getName(), lastStatistics.getParameter(MonitorService.INTERFACE));
         Assertions.assertEquals("xxx", lastStatistics.getParameter(MonitorService.METHOD));
