@@ -51,7 +51,7 @@ import static org.mockito.Mockito.verify;
  */
 public class MonitorFilterTest {
 
-    private static URL lastStatistics;
+    private static volatile URL lastStatistics;
 
     private volatile Invocation lastInvocation;
 
