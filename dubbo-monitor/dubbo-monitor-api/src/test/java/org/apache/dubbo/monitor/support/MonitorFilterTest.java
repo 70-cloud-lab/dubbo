@@ -132,8 +132,7 @@ public class MonitorFilterTest {
             }
         });
         while (lastStatistics == null) {
-            System.out.println("aaa=null");
-            Thread.sleep(1000);
+            Thread.sleep(10);
         }
         Assertions.assertEquals("abc", lastStatistics.getParameter(MonitorService.APPLICATION));
         Assertions.assertEquals(MonitorService.class.getName(), lastStatistics.getParameter(MonitorService.INTERFACE));
@@ -184,8 +183,7 @@ public class MonitorFilterTest {
             }
         });
         while (lastStatistics == null) {
-            System.out.println("xxx=null");
-            Thread.sleep(1000);
+            Thread.sleep(10);
         }
         Assertions.assertEquals("abc", lastStatistics.getParameter(MonitorService.APPLICATION));
         Assertions.assertEquals(MonitorService.class.getName(), lastStatistics.getParameter(MonitorService.INTERFACE));
