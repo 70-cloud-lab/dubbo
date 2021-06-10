@@ -109,9 +109,7 @@ public class MonitorFilterTest {
         }
     };
 
-    public void testFilter() throws Exception {
-        MonitorFilter monitorFilter = new MonitorFilter();
-        monitorFilter.setMonitorFactory(monitorFactory);
+    public void testFilter(MonitorFilter monitorFilter) throws Exception {
         Invocation invocation = new RpcInvocation("aaa", MonitorService.class.getName(), "", new Class<?>[0], new Object[0]);
         RpcContext.getContext().setRemoteAddress(NetUtils.getLocalHost(), 20880).setLocalAddress(NetUtils.getLocalHost(), 2345);
         Result result = monitorFilter.invoke(serviceInvoker, invocation);
@@ -122,7 +120,9 @@ public class MonitorFilterTest {
                 monitorFilter.onError(t, serviceInvoker, invocation);
             }
         });
-
+        while (lastStatistics == null) {
+            Thread.sleep(10);
+        }
         Assertions.assertEquals("abc", lastStatistics.getParameter(MonitorService.APPLICATION));
         Assertions.assertEquals(MonitorService.class.getName(), lastStatistics.getParameter(MonitorService.INTERFACE));
         Assertions.assertEquals("aaa", lastStatistics.getParameter(MonitorService.METHOD));
@@ -149,9 +149,7 @@ public class MonitorFilterTest {
         verify(mockMonitorFactory, never()).getMonitor(any(URL.class));
     }
 
-    public void testGenericFilter() throws Exception {
-        MonitorFilter monitorFilter = new MonitorFilter();
-        monitorFilter.setMonitorFactory(monitorFactory);
+    public void testGenericFilter(MonitorFilter monitorFilter) throws Exception {
         Invocation invocation = new RpcInvocation("$invoke", MonitorService.class.getName(), "", new Class<?>[]{String.class, String[].class, Object[].class}, new Object[]{"xxx", new String[]{}, new Object[]{}});
         RpcContext.getContext().setRemoteAddress(NetUtils.getLocalHost(), 20880).setLocalAddress(NetUtils.getLocalHost(), 2345);
         Result result = monitorFilter.invoke(serviceInvoker, invocation);
@@ -162,7 +160,9 @@ public class MonitorFilterTest {
                 monitorFilter.onError(t, serviceInvoker, invocation);
             }
         });
-
+        while (lastStatistics == null) {
+            Thread.sleep(10);
+        }
         Assertions.assertEquals("abc", lastStatistics.getParameter(MonitorService.APPLICATION));
         Assertions.assertEquals(MonitorService.class.getName(), lastStatistics.getParameter(MonitorService.INTERFACE));
         Assertions.assertEquals("xxx", lastStatistics.getParameter(MonitorService.METHOD));
@@ -199,7 +199,10 @@ public class MonitorFilterTest {
             monitor = monitorFactory.getMonitor(monitorUrl);
         }
 
-        testFilter();
-        testGenericFilter();
+        MonitorFilter monitorFilter = new MonitorFilter();
+        monitorFilter.setMonitorFactory(monitorFactory);
+
+        testFilter(monitorFilter);
+        testGenericFilter(monitorFilter);
     }
 }
