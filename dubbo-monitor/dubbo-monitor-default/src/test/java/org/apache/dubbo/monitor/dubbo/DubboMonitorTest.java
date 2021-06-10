@@ -150,13 +150,16 @@ public class DubboMonitorTest {
 
         Exporter<MonitorService> exporter = protocol.export(proxyFactory.getInvoker(monitorService, MonitorService.class, URL.valueOf("dubbo://127.0.0.1:17979/" + MonitorService.class.getName())));
         try {
-            Monitor monitor = null;
+            URL monitorUrl = URL.valueOf("dubbo://127.0.0.1:17979?interval=10");
+            Monitor monitor = monitorFactory.getMonitor(monitorUrl);
+            while (monitor == null) {
+                Thread.sleep(10);
+                monitor = monitorFactory.getMonitor(monitorUrl);
+            }
+
             long start = System.currentTimeMillis();
             while (System.currentTimeMillis() - start < 60000) {
-                monitor = monitorFactory.getMonitor(URL.valueOf("dubbo://127.0.0.1:17979?interval=10"));
-                if (monitor == null) {
-                    continue;
-                }
+                monitor = monitorFactory.getMonitor(monitorUrl);
                 try {
                     monitor.collect(statistics);
                     int i = 0;

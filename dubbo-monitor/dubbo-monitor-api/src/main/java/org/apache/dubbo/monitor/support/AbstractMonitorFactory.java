@@ -67,6 +67,7 @@ public abstract class AbstractMonitorFactory implements MonitorFactory {
     @Override
     public Monitor getMonitor(URL url) {
         url = url.setPath(MonitorService.class.getName()).addParameter(INTERFACE_KEY, MonitorService.class.getName());
+        // FIXME:could use url's protocol for key?
         String key = url.toServiceStringWithoutResolving();
         Monitor monitor = MONITORS.get(key);
         Future<Monitor> future = FUTURES.get(key);

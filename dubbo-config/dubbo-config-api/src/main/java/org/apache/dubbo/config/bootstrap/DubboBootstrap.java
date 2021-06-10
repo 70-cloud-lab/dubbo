@@ -63,6 +63,7 @@ import org.apache.dubbo.metadata.WritableMetadataService;
 import org.apache.dubbo.metadata.report.MetadataReportFactory;
 import org.apache.dubbo.metadata.report.MetadataReportInstance;
 import org.apache.dubbo.metadata.report.support.AbstractMetadataReportFactory;
+import org.apache.dubbo.monitor.MonitorFactory;
 import org.apache.dubbo.registry.client.DefaultServiceInstance;
 import org.apache.dubbo.registry.client.ServiceInstance;
 import org.apache.dubbo.registry.client.ServiceInstanceCustomizer;
@@ -529,6 +530,8 @@ public class DubboBootstrap {
 
         initMetadataService();
 
+        initMonitors();
+
         if (logger.isInfoEnabled()) {
             logger.info(NAME + " has been initialized!");
         }
@@ -869,6 +872,22 @@ public class DubboBootstrap {
     private void initMetadataService() {
         this.metadataService = getDefaultExtension();
         this.metadataServiceExporter = new ConfigurableMetadataServiceExporter(metadataService);
+    }
+
+    private void initMonitors() {
+        // FIXME:generate monitor-url is too complex
+        MonitorConfig monitorConfig = getMonitor();
+        ApplicationConfig applicationConfig = getApplication();
+        List<RegistryConfig> defaultRegistries = configManager.getDefaultRegistries();
+        MonitorFactory monitorFactory = getExtensionLoader(MonitorFactory.class).getAdaptiveExtension();
+
+        List<URL> registryUrls = ConfigValidationUtils.loadRegistries(false, applicationConfig, defaultRegistries);
+        registryUrls.forEach(url -> {
+            URL monitorUrl = ConfigValidationUtils.loadMonitor(url, monitorConfig, applicationConfig);
+            if (monitorUrl != null) {
+                monitorFactory.getMonitor(monitorUrl);
+            }
+        });
     }
 
     /**

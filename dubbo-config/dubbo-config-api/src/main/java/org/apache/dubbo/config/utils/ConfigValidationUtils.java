@@ -84,6 +84,7 @@ import static org.apache.dubbo.common.constants.CommonConstants.GROUP_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.HOST_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.INTERFACE_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.LOADBALANCE_KEY;
+import static org.apache.dubbo.common.constants.CommonConstants.LOCALHOST_VALUE;
 import static org.apache.dubbo.common.constants.CommonConstants.PASSWORD_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.PATH_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.PROTOCOL_KEY;
@@ -184,10 +185,14 @@ public class ConfigValidationUtils {
 
 
     public static List<URL> loadRegistries(AbstractInterfaceConfig interfaceConfig, boolean provider) {
-        // check && override if necessary
-        List<URL> registryList = new ArrayList<URL>();
         ApplicationConfig application = interfaceConfig.getApplication();
         List<RegistryConfig> registries = interfaceConfig.getRegistries();
+        return loadRegistries(provider, application, registries);
+    }
+
+    public static List<URL> loadRegistries(boolean provider, ApplicationConfig application, List<RegistryConfig> registries) {
+        // check && override if necessary
+        List<URL> registryList = new ArrayList<URL>();
         if (CollectionUtils.isNotEmpty(registries)) {
             for (RegistryConfig config : registries) {
                 String address = config.getAddress();
@@ -249,6 +254,12 @@ public class ConfigValidationUtils {
     }
 
     public static URL loadMonitor(AbstractInterfaceConfig interfaceConfig, URL registryURL) {
+        MonitorConfig monitor = interfaceConfig.getMonitor();
+        ApplicationConfig application = interfaceConfig.getApplication();
+        return loadMonitor(registryURL, monitor, application);
+    }
+
+    public static URL loadMonitor(URL registryURL, MonitorConfig monitor, ApplicationConfig application) {
         Map<String, String> map = new HashMap<String, String>();
         map.put(INTERFACE_KEY, MonitorService.class.getName());
         AbstractInterfaceConfig.appendRuntimeParameters(map);
@@ -262,34 +273,38 @@ public class ConfigValidationUtils {
         }
         map.put(REGISTER_IP_KEY, hostToRegistry);
 
-        MonitorConfig monitor = interfaceConfig.getMonitor();
-        ApplicationConfig application = interfaceConfig.getApplication();
         AbstractConfig.appendParameters(map, monitor);
         AbstractConfig.appendParameters(map, application);
         String address = null;
-        String sysaddress = System.getProperty(DUBBO_MONITOR_ADDRESS);
-        if (sysaddress != null && sysaddress.length() > 0) {
-            address = sysaddress;
+        String sysAddress = System.getProperty(DUBBO_MONITOR_ADDRESS);
+        if (sysAddress != null && sysAddress.length() > 0) {
+            address = sysAddress;
         } else if (monitor != null) {
             address = monitor.getAddress();
         }
-        if (ConfigUtils.isNotEmpty(address)) {
+        String protocol = monitor.getProtocol();
+        if (monitor != null &&
+                (REGISTRY_PROTOCOL.equals(protocol) || SERVICE_REGISTRY_PROTOCOL.equals(protocol))
+                && registryURL != null) {
+            return URLBuilder.from(registryURL)
+                    .setProtocol(DUBBO_PROTOCOL)
+                    .addParameter(PROTOCOL_KEY, protocol)
+                    .addParameterAndEncoded(REFER_KEY, StringUtils.toQueryString(map))
+                    .build();
+        } else if (ConfigUtils.isNotEmpty(address) || ConfigUtils.isNotEmpty(protocol)) {
             if (!map.containsKey(PROTOCOL_KEY)) {
                 if (getExtensionLoader(MonitorFactory.class).hasExtension(LOGSTAT_PROTOCOL)) {
                     map.put(PROTOCOL_KEY, LOGSTAT_PROTOCOL);
+                } else if (ConfigUtils.isNotEmpty(protocol)) {
+                    map.put(PROTOCOL_KEY, protocol);
                 } else {
                     map.put(PROTOCOL_KEY, DUBBO_PROTOCOL);
                 }
             }
+            if (ConfigUtils.isEmpty(address)) {
+                address = LOCALHOST_VALUE;
+            }
             return UrlUtils.parseURL(address, map);
-        } else if (monitor != null &&
-                (REGISTRY_PROTOCOL.equals(monitor.getProtocol()) || SERVICE_REGISTRY_PROTOCOL.equals(monitor.getProtocol()))
-                && registryURL != null) {
-            return URLBuilder.from(registryURL)
-                    .setProtocol(DUBBO_PROTOCOL)
-                    .addParameter(PROTOCOL_KEY, monitor.getProtocol())
-                    .addParameterAndEncoded(REFER_KEY, StringUtils.toQueryString(map))
-                    .build();
         }
         return null;
     }

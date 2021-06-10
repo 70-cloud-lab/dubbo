@@ -33,8 +33,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.List;
 
@@ -64,11 +62,7 @@ public class MonitorFilterTest {
         }
 
         public URL getUrl() {
-            try {
-                return URL.valueOf("dubbo://" + NetUtils.getLocalHost() + ":20880?" + APPLICATION_KEY + "=abc&" + SIDE_KEY + "=" + CONSUMER_SIDE + "&" + MONITOR_KEY + "=" + URLEncoder.encode("dubbo://" + NetUtils.getLocalHost() + ":7070", "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                throw new IllegalStateException(e.getMessage(), e);
-            }
+            return URL.valueOf("dubbo://" + NetUtils.getLocalHost() + ":20880?" + APPLICATION_KEY + "=abc&" + SIDE_KEY + "=" + CONSUMER_SIDE + "&" + MONITOR_KEY +"=dubbo");
         }
 
         @Override
@@ -87,9 +81,9 @@ public class MonitorFilterTest {
         }
     };
 
-    private MonitorFactory monitorFactory = new MonitorFactory() {
+    private MonitorFactory monitorFactory = new AbstractMonitorFactory() {
         @Override
-        public Monitor getMonitor(final URL url) {
+        protected Monitor createMonitor(URL url) {
             return new Monitor() {
                 public URL getUrl() {
                     return url;
@@ -116,6 +110,14 @@ public class MonitorFilterTest {
     };
 
     @Test
+    public void testFilters() throws Exception{
+        URL monitorUrl = URL.valueOf("dubbo://" + NetUtils.getLocalHost() + ":7070");
+        monitorFactory.getMonitor(monitorUrl);
+
+        testFilter();
+        testGenericFilter();
+    }
+
     public void testFilter() throws Exception {
         MonitorFilter monitorFilter = new MonitorFilter();
         monitorFilter.setMonitorFactory(monitorFactory);
@@ -158,7 +160,6 @@ public class MonitorFilterTest {
         verify(mockMonitorFactory, never()).getMonitor(any(URL.class));
     }
 
-    @Test
     public void testGenericFilter() throws Exception {
         MonitorFilter monitorFilter = new MonitorFilter();
         monitorFilter.setMonitorFactory(monitorFactory);

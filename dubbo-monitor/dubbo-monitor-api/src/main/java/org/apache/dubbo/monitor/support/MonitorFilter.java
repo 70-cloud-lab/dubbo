@@ -21,7 +21,6 @@ import org.apache.dubbo.common.extension.Activate;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.NetUtils;
-import org.apache.dubbo.monitor.Monitor;
 import org.apache.dubbo.monitor.MonitorFactory;
 import org.apache.dubbo.monitor.MonitorService;
 import org.apache.dubbo.rpc.Filter;
@@ -83,7 +82,7 @@ public class MonitorFilter implements Filter, Filter.Listener {
      */
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        if (invoker.getUrl().hasParameter(MONITOR_KEY)) {
+        if (shouldCollect(invoker)) {
             invocation.put(MONITOR_FILTER_START_TIME, System.currentTimeMillis());
             invocation.put(MONITOR_REMOTE_HOST_STORE, RpcContext.getContext().getRemoteHost());
             getConcurrent(invoker, invocation).incrementAndGet(); // count up
@@ -99,7 +98,7 @@ public class MonitorFilter implements Filter, Filter.Listener {
 
     @Override
     public void onResponse(Result result, Invoker<?> invoker, Invocation invocation) {
-        if (invoker.getUrl().hasParameter(MONITOR_KEY)) {
+        if (shouldCollect(invoker)) {
             collect(invoker, invocation, result, (String) invocation.get(MONITOR_REMOTE_HOST_STORE), (long) invocation.get(MONITOR_FILTER_START_TIME), false);
             getConcurrent(invoker, invocation).decrementAndGet(); // count down
         }
@@ -107,10 +106,22 @@ public class MonitorFilter implements Filter, Filter.Listener {
 
     @Override
     public void onError(Throwable t, Invoker<?> invoker, Invocation invocation) {
-        if (invoker.getUrl().hasParameter(MONITOR_KEY)) {
+        if (shouldCollect(invoker)) {
             collect(invoker, invocation, null, (String) invocation.get(MONITOR_REMOTE_HOST_STORE), (long) invocation.get(MONITOR_FILTER_START_TIME), true);
             getConcurrent(invoker, invocation).decrementAndGet(); // count down
         }
+    }
+
+    /**
+     * Two conditions should be met:
+     * 1,invoker url has parameter "monitor"
+     * 2,monitor available in "org.apache.dubbo.monitor.support.AbstractMonitorFactory#MONITORS"
+     *
+     * @param invoker
+     * @return
+     */
+    private boolean shouldCollect(Invoker<?> invoker) {
+        return invoker.getUrl().hasParameter(MONITOR_KEY) && AbstractMonitorFactory.getMonitors().size() > 0;
     }
 
     /**
@@ -125,13 +136,9 @@ public class MonitorFilter implements Filter, Filter.Listener {
      */
     private void collect(Invoker<?> invoker, Invocation invocation, Result result, String remoteHost, long start, boolean error) {
         try {
-            URL monitorUrl = invoker.getUrl().getUrlParameter(MONITOR_KEY);
-            Monitor monitor = monitorFactory.getMonitor(monitorUrl);
-            if (monitor == null) {
-                return;
-            }
             URL statisticsURL = createStatisticsUrl(invoker, invocation, result, remoteHost, start, error);
-            monitor.collect(statisticsURL);
+            // Choose any available monitor
+            AbstractMonitorFactory.getMonitors().stream().findAny().get().collect(statisticsURL);
         } catch (Throwable t) {
             logger.warn("Failed to monitor count service " + invoker.getUrl() + ", cause: " + t.getMessage(), t);
         }

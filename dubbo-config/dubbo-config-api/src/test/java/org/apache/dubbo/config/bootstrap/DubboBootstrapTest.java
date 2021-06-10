@@ -138,6 +138,33 @@ public class DubboBootstrapTest {
         Assertions.assertNotNull(url.getParameter("timestamp"));
     }
 
+    @Test
+    public void testLoadUserMonitor() {
+        URL registryUrl = URL.valueOf("zookeeper://127.0.0.1:2181");
+        // dubbo.monitor.protocol=user
+        MonitorConfig monitorConfig1 = new MonitorConfig();
+        monitorConfig1.setProtocol("user");
+        URL url1 = ConfigValidationUtils.loadMonitor(registryUrl, monitorConfig1, new ApplicationConfig("testLoadMonitor"));
+        Assertions.assertEquals("user", url1.getProtocol());
+
+        // dubbo.monitor.protocol=user
+        // dubbo.monitor.address=1.2.3.4:5678
+        MonitorConfig monitorConfig2 = new MonitorConfig();
+        monitorConfig2.setProtocol("user");
+        monitorConfig2.setAddress("1.2.3.4:5678");
+        URL url2 = ConfigValidationUtils.loadMonitor(registryUrl, monitorConfig2, new ApplicationConfig("testLoadMonitor"));
+        Assertions.assertEquals("user", url2.getProtocol());
+        Assertions.assertEquals("1.2.3.4:5678", url2.getAddress());
+
+        // dubbo.monitor.address=user://1.2.3.4:5678?k=v
+        MonitorConfig monitorConfig3 = new MonitorConfig();
+        monitorConfig3.setAddress("user://1.2.3.4:5678?param1=value1");
+        URL url3 = ConfigValidationUtils.loadMonitor(registryUrl, monitorConfig3, new ApplicationConfig("testLoadMonitor"));
+        Assertions.assertEquals("user", url3.getProtocol());
+        Assertions.assertEquals("1.2.3.4:5678", url3.getAddress());
+        Assertions.assertEquals("value1", url3.getParameter("param1"));
+    }
+
     private void writeDubboProperties(String key, String value) {
         OutputStream os = null;
         try {
