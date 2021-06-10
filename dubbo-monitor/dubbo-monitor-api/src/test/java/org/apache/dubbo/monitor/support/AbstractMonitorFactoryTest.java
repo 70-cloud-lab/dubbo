@@ -66,7 +66,7 @@ public class AbstractMonitorFactoryTest {
         Monitor monitor1 = monitorFactory.getMonitor(url);
         Monitor monitor2 = monitorFactory.getMonitor(url);
         if (monitor1 == null || monitor2 == null) {
-            Thread.sleep(2000);
+            Thread.sleep(500);
             monitor1 = monitorFactory.getMonitor(url);
             monitor2 = monitorFactory.getMonitor(url);
         }
@@ -79,7 +79,7 @@ public class AbstractMonitorFactoryTest {
         Monitor monitor1 = monitorFactory.getMonitor(url);
         Monitor monitor2 = monitorFactory.getMonitor(url);
         if (monitor1 == null || monitor2 == null) {
-            Thread.sleep(2000);
+            Thread.sleep(500);
             monitor1 = monitorFactory.getMonitor(url);
             monitor2 = monitorFactory.getMonitor(url);
         }
@@ -93,7 +93,7 @@ public class AbstractMonitorFactoryTest {
         Monitor monitor1 = monitorFactory.getMonitor(url1);
         Monitor monitor2 = monitorFactory.getMonitor(url2);
         if (monitor1 == null || monitor2 == null) {
-            Thread.sleep(2000);
+            Thread.sleep(500);
             monitor1 = monitorFactory.getMonitor(url1);
             monitor2 = monitorFactory.getMonitor(url2);
         }
