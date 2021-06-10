@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 
+import static org.apache.dubbo.common.constants.CommonConstants.DUBBO_MONITOR_ADDRESS;
 import static org.apache.dubbo.common.constants.CommonConstants.SHUTDOWN_WAIT_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.SHUTDOWN_WAIT_SECONDS_KEY;
 
@@ -136,33 +137,57 @@ public class DubboBootstrapTest {
         Assertions.assertNotNull(url.getParameter("dubbo"));
         Assertions.assertNotNull(url.getParameter("pid"));
         Assertions.assertNotNull(url.getParameter("timestamp"));
+        // remove properties after test
+        System.setProperty("dubbo.monitor.address", "");
+        System.setProperty("dubbo.monitor.protocol", "");
     }
 
     @Test
-    public void testLoadUserMonitor() {
+    public void testLoadUserMonitor1() {
         URL registryUrl = URL.valueOf("zookeeper://127.0.0.1:2181");
         // dubbo.monitor.protocol=user
-        MonitorConfig monitorConfig1 = new MonitorConfig();
-        monitorConfig1.setProtocol("user");
-        URL url1 = ConfigValidationUtils.loadMonitor(registryUrl, monitorConfig1, new ApplicationConfig("testLoadMonitor"));
-        Assertions.assertEquals("user", url1.getProtocol());
+        MonitorConfig monitorConfig = new MonitorConfig();
+        monitorConfig.setProtocol("user");
+        URL url = ConfigValidationUtils.loadMonitor(registryUrl, monitorConfig, new ApplicationConfig("testLoadMonitor"));
+        Assertions.assertEquals("user", url.getProtocol());
+    }
 
+    @Test
+    public void testLoadUserMonitor2() {
+        URL registryUrl = URL.valueOf("zookeeper://127.0.0.1:2181");
         // dubbo.monitor.protocol=user
         // dubbo.monitor.address=1.2.3.4:5678
-        MonitorConfig monitorConfig2 = new MonitorConfig();
-        monitorConfig2.setProtocol("user");
-        monitorConfig2.setAddress("1.2.3.4:5678");
-        URL url2 = ConfigValidationUtils.loadMonitor(registryUrl, monitorConfig2, new ApplicationConfig("testLoadMonitor"));
-        Assertions.assertEquals("user", url2.getProtocol());
-        Assertions.assertEquals("1.2.3.4:5678", url2.getAddress());
+        MonitorConfig monitorConfig = new MonitorConfig();
+        monitorConfig.setProtocol("user");
+        monitorConfig.setAddress("1.2.3.4:5678");
+        URL url = ConfigValidationUtils.loadMonitor(registryUrl, monitorConfig, new ApplicationConfig("testLoadMonitor"));
+        System.out.println(url);
+        Assertions.assertEquals("user", url.getProtocol());
+        Assertions.assertEquals("1.2.3.4:5678", url.getAddress());
+    }
 
+    @Test
+    public void testLoadUserMonitor3() {
+        URL registryUrl = URL.valueOf("zookeeper://127.0.0.1:2181");
         // dubbo.monitor.address=user://1.2.3.4:5678?k=v
-        MonitorConfig monitorConfig3 = new MonitorConfig();
-        monitorConfig3.setAddress("user://1.2.3.4:5678?param1=value1");
-        URL url3 = ConfigValidationUtils.loadMonitor(registryUrl, monitorConfig3, new ApplicationConfig("testLoadMonitor"));
-        Assertions.assertEquals("user", url3.getProtocol());
-        Assertions.assertEquals("1.2.3.4:5678", url3.getAddress());
-        Assertions.assertEquals("value1", url3.getParameter("param1"));
+        MonitorConfig monitorConfig = new MonitorConfig();
+        monitorConfig.setAddress("user://1.2.3.4:5678?param1=value1");
+        URL url = ConfigValidationUtils.loadMonitor(registryUrl, monitorConfig, new ApplicationConfig("testLoadMonitor"));
+        Assertions.assertEquals("user", url.getProtocol());
+        Assertions.assertEquals("1.2.3.4:5678", url.getAddress());
+        Assertions.assertEquals("value1", url.getParameter("param1"));
+    }
+
+    @Test
+    public void testLoadUserMonitor4() {
+        URL registryUrl = URL.valueOf("zookeeper://127.0.0.1:2181");
+        // -Ddubbo.monitor.address=1.2.3.4:5678
+        System.setProperty(DUBBO_MONITOR_ADDRESS,"1.2.3.4:5678");
+        URL url = ConfigValidationUtils.loadMonitor(registryUrl, null, new ApplicationConfig("testLoadMonitor"));
+        Assertions.assertEquals("dubbo", url.getProtocol());
+        Assertions.assertEquals("1.2.3.4:5678", url.getAddress());
+        // remove properties after test
+        System.setProperty(DUBBO_MONITOR_ADDRESS,"");
     }
 
     private void writeDubboProperties(String key, String value) {
