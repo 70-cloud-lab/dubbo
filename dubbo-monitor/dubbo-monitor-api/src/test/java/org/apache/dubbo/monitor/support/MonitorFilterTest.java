@@ -110,10 +110,14 @@ public class MonitorFilterTest {
     };
 
     @Test
-    public void testFilters() throws Exception{
+    public void testFilters() throws Exception {
         URL monitorUrl = URL.valueOf("dubbo://" + NetUtils.getLocalHost() + ":7070");
-        monitorFactory.getMonitor(monitorUrl);
-
+        Monitor monitor = monitorFactory.getMonitor(monitorUrl);
+        int i = 0;
+        while (monitor == null && i < 200) {
+            i++;
+            monitor = monitorFactory.getMonitor(monitorUrl);
+        }
         testFilter();
         testGenericFilter();
     }
