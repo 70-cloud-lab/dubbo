@@ -99,7 +99,9 @@ public class MonitorFilterTest {
                 }
 
                 public void collect(URL statistics) {
+                    System.out.println("----collect-------------M=:"+this.hashCode());
                     MonitorFilterTest.this.lastStatistics = statistics;
+                    System.out.println("----collect-------------S="+ MonitorFilterTest.this.lastStatistics.hashCode());
                 }
 
                 public List<URL> lookup(URL query) {
@@ -114,15 +116,17 @@ public class MonitorFilterTest {
         RpcContext.getContext().setRemoteAddress(NetUtils.getLocalHost(), 20880).setLocalAddress(NetUtils.getLocalHost(), 2345);
         Result result = monitorFilter.invoke(serviceInvoker, invocation);
         result.whenCompleteWithContext((r, t) -> {
+            System.out.println("----whenCompleteWithContext----------------");
             if (t == null) {
                 monitorFilter.onResponse(r, serviceInvoker, invocation);
             } else {
                 monitorFilter.onError(t, serviceInvoker, invocation);
             }
         });
-        while (lastStatistics == null) {
-            Thread.sleep(10);
-        }
+//        while (lastStatistics == null) {
+//            Thread.sleep(10);
+//        }
+        System.out.println("----test-------------S="+ (lastStatistics==null?"NULL":lastStatistics.hashCode()));
         Assertions.assertEquals("abc", lastStatistics.getParameter(MonitorService.APPLICATION));
         Assertions.assertEquals(MonitorService.class.getName(), lastStatistics.getParameter(MonitorService.INTERFACE));
         Assertions.assertEquals("aaa", lastStatistics.getParameter(MonitorService.METHOD));
@@ -154,15 +158,17 @@ public class MonitorFilterTest {
         RpcContext.getContext().setRemoteAddress(NetUtils.getLocalHost(), 20880).setLocalAddress(NetUtils.getLocalHost(), 2345);
         Result result = monitorFilter.invoke(serviceInvoker, invocation);
         result.whenCompleteWithContext((r, t) -> {
+            System.out.println("----whenCompleteWithContext-G---------------");
             if (t == null) {
                 monitorFilter.onResponse(r, serviceInvoker, invocation);
             } else {
                 monitorFilter.onError(t, serviceInvoker, invocation);
             }
         });
-        while (lastStatistics == null) {
-            Thread.sleep(10);
-        }
+//        while (lastStatistics == null) {
+//            Thread.sleep(10);
+//        }
+        System.out.println("----testG-------------S="+ (lastStatistics==null?"NULL":lastStatistics.hashCode()));
         Assertions.assertEquals("abc", lastStatistics.getParameter(MonitorService.APPLICATION));
         Assertions.assertEquals(MonitorService.class.getName(), lastStatistics.getParameter(MonitorService.INTERFACE));
         Assertions.assertEquals("xxx", lastStatistics.getParameter(MonitorService.METHOD));
